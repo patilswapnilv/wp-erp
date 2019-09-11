@@ -102,7 +102,7 @@ function erp_acct_format_purchase_line_items( $voucher_no ) {
         product.category_id,
         product.vendor,
         product.cost_price,
-        product.sale_price
+        product.sale_price as unit_price
 
         FROM {$wpdb->prefix}erp_acct_purchase AS purchase
         LEFT JOIN {$wpdb->prefix}erp_acct_purchase_details AS purchase_detail ON purchase.voucher_no = purchase_detail.trn_no
@@ -354,7 +354,7 @@ function erp_acct_update_purchase( $purchase_data, $purchase_id ) {
                 $status_closed, $data['updated_at'], $user_id, $purchase_id, $voucher_no )
             );
 
-            $items = $old_purchase['purchase_details'];
+            $items = $old_purchase['line_items'];
 
             foreach ( $items as $key => $item ) {
                 $wpdb->insert( $wpdb->prefix . 'erp_acct_purchase_details', array(
@@ -362,11 +362,9 @@ function erp_acct_update_purchase( $purchase_data, $purchase_id ) {
                     'product_id' => $item['product_id'],
                     'qty'        => $item['qty'],
                     'price'      => $item['unit_price'],
-                    'amount'     => $item['item_total'],
-                    'created_at' => $purchase_data['created_at'],
-                    'created_by' => $purchase_data['created_by'],
-                    'updated_at' => $purchase_data['updated_at'],
-                    'updated_by' => $purchase_data['updated_by']
+                    'amount'     => (float)$item['qty'] * (float)$item['unit_price'],
+                    'updated_at' => date( 'Y-m-d H:i:s' ),
+                    'updated_by' => $user_id
                 ) );
             }
 
@@ -376,10 +374,8 @@ function erp_acct_update_purchase( $purchase_data, $purchase_id ) {
                 'trn_date'    => $purchase_data['trn_date'],
                 'particulars' => $purchase_data['particulars'],
                 'debit'       => $purchase_data['amount'],
-                'created_at'  => $purchase_data['created_at'],
-                'created_by'  => $purchase_data['created_by'],
-                'updated_at'  => $purchase_data['updated_at'],
-                'updated_by'  => $purchase_data['updated_by']
+                'updated_at'  => date( 'Y-m-d H:i:s' ),
+                'updated_by'  => $user_id
             ) );
 
             do_action( 'erp_acct_after_purchase_update', $purchase_data, $purchase_id );
